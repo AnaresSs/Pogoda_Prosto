@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import nats
 from nats.aio.client import Client
 from nats.js import JetStreamContext
@@ -35,8 +33,8 @@ async def ensure_stream(js: JetStreamContext, name: str, subjects: list[str]):
         subjects=subjects,
         storage=StorageType.FILE,
         retention=RetentionPolicy.LIMITS,
-        max_age=timedelta(hours=100),
-        duplicate_window=timedelta(hours=26),
+        max_age=100 * 60 * 60,
+        duplicate_window=26 * 60 * 60,
     )
     try:
         await js.stream_info(name)
@@ -49,7 +47,7 @@ async def ensure_consumer(js: JetStreamContext, stream: str, durable: str, filte
     cfg = ConsumerConfig(
         durable_name=durable,
         ack_policy=AckPolicy.EXPLICIT,
-        ack_wait=timedelta(minutes=5),
+        ack_wait=5 * 60,
         max_deliver=3,
         deliver_policy=DeliverPolicy.ALL,
         filter_subject=filter_subject,
