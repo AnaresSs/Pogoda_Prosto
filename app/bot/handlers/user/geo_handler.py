@@ -10,7 +10,9 @@ router = Router()
 
 @router.callback_query(F.data == 'editGeo')
 async def callback_edit_geo(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
     await state.set_state(Registration.waiting_for_locality)
+    await callback.message.delete()
     await callback.message.answer(
         'Отправь геолокацию 📍 или напиши название населённого пункта 🏙️',
         reply_markup=kb_reply.get_keyboard_start(),

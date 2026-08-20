@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 
 from app.database.models import Locality
 
@@ -21,7 +21,7 @@ class LocalityRepository:
         return result.rowcount > 0
 
     async def get_by_name(self, name: str): # lower() для отсутсвия строго учета регистра
-        locality = await self.session.scalar(select(Locality).where(Locality.name.lower() == name.lower()))
+        locality = await self.session.scalar(select(Locality).where(func.lower(Locality.name) == name.lower()))
         return locality
 
     async def get_by_id(self, locality_id: int):

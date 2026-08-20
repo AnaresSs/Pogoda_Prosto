@@ -65,19 +65,17 @@ async def location_handler(message: Message, state: FSMContext):
 
     if locality is not None:
         await state.clear()
+        menu = await get_menu_keyboard(message.from_user.id)
         await message.answer(f'''
 📍 <b>{locality.name}</b> — нашёл твой населённый пункт!
 Сохранён по координатам: {latitude:.4f}, {longitude:.4f}
 
 Всё готово! Погода будет ждать тебя каждое утро. 🌤️
-''', parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
-        menu = await get_menu_keyboard(message.from_user.id)
-        await message.answer('<b>Главное меню</b>', reply_markup=menu, parse_mode=ParseMode.HTML)
+''', parse_mode=ParseMode.HTML, reply_markup=menu)
     else:
         await message.answer('''
 😕 Рядом с тобой не нашлось населённого пункта.
-Попробуй написать название города текстом 📝.''',
-reply_markup=ReplyKeyboardRemove())
+Попробуй написать название города текстом 📝.''')
 
 
 @router.message(Registration.waiting_for_locality)
@@ -86,13 +84,12 @@ async def message_location(message: Message, state: FSMContext):
 
     if await tg_user_service.edit_locality(tg_id, message.text.strip()):
         await state.clear()
+        menu = await get_menu_keyboard(tg_id)
         await message.answer(f'''
 ✅ <b>{message.text.strip()}</b> — сохранил как твой населённый пункт!
 
 Всё готово! Погода будет ждать тебя каждое утро. 🌤️
-''', parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
-        menu = await get_menu_keyboard(tg_id)
-        await message.answer('<b>Главное меню</b>', reply_markup=menu, parse_mode=ParseMode.HTML)
+''', parse_mode=ParseMode.HTML, reply_markup=menu)
     else:
         await message.answer('''
 😕 Такой населённый пункт не найден.

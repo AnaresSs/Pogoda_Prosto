@@ -27,7 +27,7 @@ async def callback_admin_mailing(callback: CallbackQuery, state: FSMContext):
         return
 
     await state.set_state(Mailing.waiting_for_message)
-    await callback.message.answer('''
+    await callback.message.edit_text('''
 Отправь сообщение для рассылки 📨
 Оно будет скопировано всем выбранным пользователям.
 ''', reply_markup=kb_inline.get_keyboard_mailing_message())
