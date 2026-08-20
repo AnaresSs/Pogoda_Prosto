@@ -15,6 +15,8 @@ def get_keyboard_menu(notifications_enabled: bool = True):
     else:
         keyboard.button(text='🔴 Уведомления отключены', callback_data='toggle_notifications')
 
+    keyboard.adjust(2, 2, 1, 1)
+
     return keyboard.as_markup()
 
 
@@ -24,6 +26,8 @@ def get_keyboard_admin():
     keyboard.button(text='📊 Статистика', callback_data='admin_stats')
     keyboard.button(text='📨 Рассылка', callback_data='admin_mailing')
     keyboard.button(text='Вернуться в меню пользователя', callback_data='returnToMenu')
+
+    keyboard.adjust(2, 1)
 
     return keyboard.as_markup()
 
@@ -53,6 +57,8 @@ def get_keyboard_mailing_audience():
     keyboard.button(text='📨 С ежедневной рассылкой', callback_data='mailing_audience_notif_on')
     keyboard.button(text='🔕 Без ежедневной рассылки', callback_data='mailing_audience_notif_off')
     keyboard.button(text='◀️ Назад', callback_data='mailing_back')
+
+    keyboard.adjust(1, 1, 1, 1, 1, 1)
 
     return keyboard.as_markup()
 
