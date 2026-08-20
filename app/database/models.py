@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 engine = create_async_engine(url=SQLALCHEMY_URL)
 
-async_session = async_sessionmaker(engine, expire_on_commit=False)
+async_session = async_sessionmaker(engine)
 
 
 class Base(AsyncAttrs, DeclarativeBase):

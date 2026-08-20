@@ -34,7 +34,7 @@ async def edit_locality_by_coords(session, tg_id: int, latitude: float, longitud
 
 
 
-@with_session_transaction
+@with_session
 async def get_users(session, has_locality: bool | None = None, notifications_enabled: bool | None = None):
     tg_repo = TelegramUserRepository(session)
 
