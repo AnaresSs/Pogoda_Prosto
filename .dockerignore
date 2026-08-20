@@ -1,0 +1,13 @@
+.venv
+.env
+.git
+.gitignore
+.idea
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.session
+Dockerfile
+docker-compose.yml
+.dockerignore
