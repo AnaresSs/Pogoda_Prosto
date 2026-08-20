@@ -18,19 +18,22 @@ async def get_user_weather(tg_id: int, days: int):
     locality = await locality_service.get_by_id(user.locality_id)
     if locality is None:
         return None
-    return await weather_client.get_forecast(locality.latitude, locality.longitude, days=days)
+    weather = await weather_client.get_forecast(locality.latitude, locality.longitude, days=days)
+    return weather, locality.name
 
 
 async def send_forecast(callback: CallbackQuery, days: int):
-    weather = await get_user_weather(callback.from_user.id, days)
-    if weather is None:
+    result = await get_user_weather(callback.from_user.id, days)
+    if result is None:
         await callback.answer('Сначала укажи свой город 📍', show_alert=True)
         return
 
+    weather, city_name = result
+
     if days == 1:
-        text = weather_message.format_weather_message(weather)
+        text = weather_message.format_weather_message(weather, city_name)
     else:
-        text = weather_message.format_weather_forecast(weather)
+        text = weather_message.format_weather_forecast(weather, city_name)
 
     await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_inline.get_keyboard_weather())
 

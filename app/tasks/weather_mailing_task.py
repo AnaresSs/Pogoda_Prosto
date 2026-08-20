@@ -64,7 +64,7 @@ async def handle_weather_message(message):
         return
 
     weather = await weather_client.get_forecast(locality.latitude, locality.longitude)
-    await weather_mailing_notification.send_weather_notification(user_id, weather)
+    await weather_mailing_notification.send_weather_notification(user_id, weather, locality.name)
     await message.ack()
 
 
