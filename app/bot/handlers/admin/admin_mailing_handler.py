@@ -75,11 +75,11 @@ async def callback_mailing_audience(callback: CallbackQuery, state: FSMContext):
     await nats_service.publish_admin_mailing_summary(mailing_id, callback.from_user.id, total)
 
     await state.clear()
-    await callback.message.answer(f'''
+    await callback.message.edit_text(f'''
 Рассылка запущена ✅
 Всего пользователей: {total}
 Сообщение будет скопировано каждому.
-''')
+''', reply_markup=kb_inline.get_keyboard_admin())
 
 
 @router.callback_query(F.data == 'mailing_back')

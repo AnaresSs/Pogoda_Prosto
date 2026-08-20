@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from aiogram.enums import ParseMode
@@ -30,6 +31,7 @@ async def handle_admin_mailing_message(message):
             f'🚫 Заблокировали бота: {stats["blocked"]}',
             f'⚠️ Ошибки: {stats["errors"]}',
         ]
+        print(f"[admin_mailing] summary для {message.subject}: {stats}")
         await globals.bot.send_message(
             data["admin_chat_id"],
             '\n'.join(lines),
@@ -46,10 +48,13 @@ async def handle_admin_mailing_message(message):
         )
         increment(message.subject, "success")
         await message.ack()
+        print(f"[admin_mailing] отправлено пользователю {data['user_id']}")
     except TelegramForbiddenError:
         increment(message.subject, "blocked")
         await message.term()
-    except Exception:
+        print(f"[admin_mailing] пользователь {data['user_id']} заблокировал бота")
+    except Exception as exc:
+        print(f"[admin_mailing] ошибка доставки {data['user_id']}: {exc}")
         if message.metadata.num_delivered >= MAX_DELIVER:
             increment(message.subject, "errors")
             await message.term()
@@ -64,9 +69,18 @@ async def admin_mailing_worker():
             messages = await sub.fetch(10, timeout=1)
         except TimeoutError:
             continue
+        except Exception as exc:
+            print(f"Ошибка fetch в админ-воркере: {exc}")
+            await asyncio.sleep(2)
+            continue
         for message in messages:
             try:
                 await handle_admin_mailing_message(message)
             except Exception as exc:
                 print(f"Ошибка обработки рассылки: {exc}")
-                await message.nak()
+                try:
+                    await message.nak()
+                except Exception:
+                    pass
+
+
