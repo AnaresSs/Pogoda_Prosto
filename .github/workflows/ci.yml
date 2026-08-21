@@ -50,4 +50,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/Pogoda_Prosto
+            git fetch origin
+            git reset --hard origin/main
             ./deploy.sh
