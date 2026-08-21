@@ -67,10 +67,10 @@ async def admin_mailing_worker():
     while True:
         try:
             messages = await sub.fetch(10, timeout=1)
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             continue
         except Exception as exc:
-            print(f"Ошибка fetch в админ-воркере: {exc}")
+            print(f"Ошибка fetch в админ-воркере: {exc!r}")
             await asyncio.sleep(2)
             continue
         for message in messages:

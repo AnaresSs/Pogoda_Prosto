@@ -73,13 +73,20 @@ async def weather_sender_worker():
     while True:
         try:
             messages = await sub.fetch(10, timeout=1)
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
+            continue
+        except Exception as exc:
+            print(f"Ошибка fetch в погодном воркере: {exc!r}")
+            await asyncio.sleep(2)
             continue
         for message in messages:
             try:
                 await handle_weather_message(message)
             except Exception as exc:
-                print(f"Ошибка обработки задачи: {exc}")
-                await message.nak()
+                print(f"Ошибка обработки задачи: {exc!r}")
+                try:
+                    await message.nak()
+                except Exception:
+                    pass
 
 
