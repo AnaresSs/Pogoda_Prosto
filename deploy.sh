@@ -3,8 +3,11 @@ set -e
 
 cd "$(dirname "$0")"
 
-echo "Потягиваем код из git..."
-git pull
+echo "Синхронизируемся с репозиторием..."
+# Жёсткое приведение к состоянию origin/main: сервер всегда зеркало репозитория.
+# Локальные правки затираются намеренно (.env не трогается — он не в git)
+git fetch origin
+git reset --hard origin/main
 
 echo "Пересобираем и перезапускаем контейнеры..."
 docker compose up --build -d

@@ -50,5 +50,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/Pogoda_Prosto
-            git pull
             ./deploy.sh
