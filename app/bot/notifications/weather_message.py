@@ -43,7 +43,7 @@ def format_precip(value):
 
 
 def format_wind(value):
-    return f"до {value:.0f} км/ч" if value is not None else "—"
+    return f"до {value / 3.6:.1f} м/с" if value is not None else "—"
 
 
 def describe_weather(code):
@@ -74,9 +74,6 @@ def format_weather_message(weather, city_name="") -> str:
     precip_str = format_precip(get_daily_value(daily, "precipitation_probability_max", 0))
     wind_str = format_wind(get_daily_value(daily, "wind_speed_10m_max", 0))
 
-    uv = get_daily_value(daily, "uv_index_max", 0)
-    uv_str = f"{uv:.0f}" if uv is not None else "—"
-
     sunrise = get_daily_value(daily, "sunrise", 0)
     sunset = get_daily_value(daily, "sunset", 0)
     sunrise_str = sunrise[11:16] if sunrise else "—"
@@ -89,7 +86,6 @@ def format_weather_message(weather, city_name="") -> str:
 
 💧 <b>Осадки:</b> {precip_str}
 💨 <b>Ветер:</b> {wind_str}
-☀️ <b>УФ-индекс:</b> {uv_str}
 
 🌅 <b>Рассвет:</b> {sunrise_str}
 🌇 <b>Закат:</b> {sunset_str}
