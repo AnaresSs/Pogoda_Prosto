@@ -60,6 +60,13 @@ def days_word(count):
     return "дней"
 
 
+def format_city_header(city_name=""):
+    title = "🌀 <b>Погода Просто</b>"
+    if city_name:
+        return f"{title} · {city_name}"
+    return title
+
+
 def format_weather_message(weather, city_name="") -> str:
     current = weather.get("current") or {}
     daily = weather.get("daily") or {}
@@ -79,7 +86,7 @@ def format_weather_message(weather, city_name="") -> str:
     sunrise_str = sunrise[11:16] if sunrise else "—"
     sunset_str = sunset[11:16] if sunset else "—"
 
-    return f'''🌀 <b>Погода Просто</b> · {city_name}
+    return f'''{format_city_header(city_name)}
 
 <b>Сейчас:</b> {current_temp_str}, {current_desc}
 <b>Днём:</b> {temp_max_str} / ночью {temp_min_str}, {daily_desc}
@@ -97,7 +104,7 @@ def format_weather_forecast(weather, city_name=""):
     daily = weather.get("daily") or {}
     times = daily.get("time") or []
 
-    header = f'🌀 <b>Погода Просто</b> · {city_name}\n<b>Прогноз на {len(times)} {days_word(len(times))}</b>'
+    header = f'{format_city_header(city_name)}\n<b>Прогноз на {len(times)} {days_word(len(times))}</b>'
 
     blocks = []
     for index in range(len(times)):

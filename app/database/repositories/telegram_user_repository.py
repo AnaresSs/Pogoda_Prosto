@@ -32,9 +32,9 @@ class TelegramUserRepository:
         stmt = select(TelegramUser)
         if has_locality is not None:
             if has_locality:
-                stmt = stmt.where(TelegramUser.locality_id is not None)
+                stmt = stmt.where(TelegramUser.locality_id.is_not(None))
             else:
-                stmt = stmt.where(TelegramUser.locality_id is None)
+                stmt = stmt.where(TelegramUser.locality_id.is_(None))
         if notifications_enabled is not None:
             stmt = stmt.where(TelegramUser.notifications_enabled == notifications_enabled)
         users = await self.session.scalars(stmt)
@@ -61,7 +61,6 @@ class TelegramUserRepository:
         rows = await self.session.execute(
             select(Locality.name, func.count(TelegramUser.id))
             .join(Locality, TelegramUser.locality_id == Locality.id)
-            .where(TelegramUser.locality_id is not None)
             .group_by(Locality.id, Locality.name)
             .order_by(func.count(TelegramUser.id).desc())
         )
