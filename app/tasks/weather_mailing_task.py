@@ -5,13 +5,12 @@ from datetime import datetime, timezone, timedelta
 from nats.errors import TimeoutError
 
 from app.bot.notifications import weather_mailing_notification
-from app.core.config import NATS_SENDER_CONSUMER
+from app.core.config import NATS_SENDER_CONSUMER, SEND_HOUR
 from app.integrations.weather_client import weather_client
 from app.services import locality_service
 from app.services import nats_service
 from app.services import tg_user_service
 
-SEND_HOUR = 7
 SENDER_SUBJECT = "weather.daily"
 last_checked_minute = None
 

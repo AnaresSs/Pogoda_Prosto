@@ -23,4 +23,7 @@ NATS_ADMIN_STREAM_NAME = os.getenv('NATS_ADMIN_STREAM_NAME', 'ADMIN_MAILING')
 NATS_ADMIN_STREAM_SUBJECTS = [s.strip() for s in os.getenv('NATS_ADMIN_STREAM_SUBJECTS', 'admin.mailing.>').split(',')]
 NATS_ADMIN_SENDER_CONSUMER = os.getenv('NATS_ADMIN_SENDER_CONSUMER', 'admin_mailing')
 
+# Час локального времени города для ежедневной рассылки (по умолчанию 07:00)
+SEND_HOUR = int(os.getenv('SEND_HOUR', '7'))
+
 
