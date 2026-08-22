@@ -19,6 +19,7 @@ async def publish_due_users(utc_now):
     localities = {locality.id: locality for locality in await locality_service.get_all()}
     users = await tg_user_service.get_users()
 
+    published = 0
     for user in users:
         if not user.notifications_enabled or user.locality_id is None:
             continue
@@ -31,6 +32,10 @@ async def publish_due_users(utc_now):
             continue
 
         await nats_service.publish_weather_task(user.id, local_time)
+        published += 1
+
+    if published:
+        print(f"[publisher] опубликовано задач рассылки: {published}")
 
 
 async def weather_mailing_worker():

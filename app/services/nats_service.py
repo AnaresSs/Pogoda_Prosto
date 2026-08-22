@@ -32,7 +32,9 @@ async def subscribe(subject: str, durable: str):
 
 
 async def publish_weather_task(user_id: int, send_at: datetime):
-    msg_id = f"weather:{user_id}:{send_at.date().isoformat()}"
+    # Час в идентификаторе обязателен: иначе повторная публикация в тот же день
+    # (например, после сбоя доставки утром) гасится дедупликацией NATS за 26 часов
+    msg_id = f"weather:{user_id}:{send_at.isoformat()}"
     payload = json.dumps({"user_id": user_id, "send_at": send_at.isoformat()}).encode()
     await publish("weather.daily", payload, msg_id)
 
