@@ -129,11 +129,11 @@ docker compose up -d --build
 
 | Переменная | Описание | Пример |
 |---|---|---|
-| `TOKEN` | токен бота от [@BotFather](https://t.me/BotFather) | `123456:AA...` |
+| `TOKEN` | токен бота от [@BotFather](https://t.me/BotFather) | `1234567890:AAExK9mQrTz4vBnW8yLpCdF2gHsJaN6uVwXo` |
 | `SQLALCHEMY_URL` | строка подключения к БД | `postgresql+asyncpg://user:pass@localhost:5432/db` |
-| `SUPER_ADMIN_ID` | Telegram ID администратора | `7605089787` |
-| `ADMIN_GROUP_ID` | ID админ-группы для уведомлений | `-1003661633216` |
-| `SERVER_IP` | IP сервера (для инфо-сообщений) | `5.129.237.34` |
+| `SUPER_ADMIN_ID` | Telegram ID администратора | `123456789` |
+| `ADMIN_GROUP_ID` | ID админ-группы для уведомлений | `-1009876543210` |
+| `SERVER_IP` | IP сервера (для инфо-сообщений) | `203.0.113.10` |
 | `NATS_URL` | адрес NATS | `nats://localhost:4222` |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | реквизиты контейнера БД | `weather_db` |
 | `SEND_HOUR` | час рассылки, необязательно (по умолчанию `7`) | `10` |
@@ -158,7 +158,3 @@ pytest
 2. **deploy** — SSH на сервер (ключи в зашифрованных Secrets репозитория): синхронизация кода через `git reset --hard origin/main`, пересборка контейнеров, ожидание маркера успешного старта в логах бота
 
 Ручной деплой с самого сервера: `./deploy.sh`.
-
----
-
-*Проект написан в учебных целях: асинхронный Python, очереди сообщений, тестирование и CI/CD — всё на реальном примере.*
