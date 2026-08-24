@@ -29,8 +29,11 @@ services:
       retries: 10
 
   weather_bot:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     restart: always
+    # Пути env_file отсчитываются от project directory (запускаем из корня репо)
     env_file: .env
     environment:
       SQLALCHEMY_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}

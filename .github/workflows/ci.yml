@@ -52,4 +52,4 @@ jobs:
             cd ~/Pogoda_Prosto
             git fetch origin
             git reset --hard origin/main
-            ./deploy.sh
+            ./scripts/deploy.sh
