@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from datetime import datetime, timezone, timedelta
 
 from nats.errors import TimeoutError
@@ -10,6 +11,8 @@ from app.integrations.weather_client import weather_client
 from app.services import locality_service
 from app.services import nats_service
 from app.services import tg_user_service
+
+logger = logging.getLogger(__name__)
 
 SENDER_SUBJECT = "weather.daily"
 last_checked_minute = None
@@ -35,7 +38,7 @@ async def publish_due_users(utc_now):
         published += 1
 
     if published:
-        print(f"[publisher] опубликовано задач рассылки: {published}")
+        logger.info("опубликовано задач рассылки: %d", published)
 
 
 async def weather_mailing_worker():
@@ -47,7 +50,7 @@ async def weather_mailing_worker():
                 await publish_due_users(utc_now)
                 last_checked_minute = utc_now.minute
             except Exception as exc:
-                print(f"Ошибка рассылки: {exc}")
+                logger.error("Ошибка рассылки: %s", exc)
                 await asyncio.sleep(10)
                 continue
         await asyncio.sleep(1)
@@ -80,14 +83,14 @@ async def weather_sender_worker():
         except (TimeoutError, asyncio.TimeoutError):
             continue
         except Exception as exc:
-            print(f"Ошибка fetch в погодном воркере: {exc!r}")
+            logger.error("Ошибка fetch в погодном воркере: %r", exc)
             await asyncio.sleep(2)
             continue
         for message in messages:
             try:
                 await handle_weather_message(message)
             except Exception as exc:
-                print(f"Ошибка обработки задачи: {exc!r}")
+                logger.error("Ошибка обработки задачи: %r", exc)
                 try:
                     await message.nak()
                 except Exception:

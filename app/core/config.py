@@ -11,6 +11,9 @@ SUPER_ADMIN_ID = int(os.getenv('SUPER_ADMIN_ID'))
 ADMIN_IDS = [SUPER_ADMIN_ID]
 ADMIN_GROUP_ID = os.getenv('ADMIN_GROUP_ID')
 
+# Username разработчика для кнопки поддержки (без @)
+SUPPORT_USERNAME = os.getenv('SUPPORT_USERNAME', '')
+
 
 SERVER_IP = os.getenv('SERVER_IP')
 NATS_URL = os.getenv('NATS_URL')

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from aiogram import Bot, Dispatcher
 from app.core.config import TOKEN
 import aiohttp
@@ -23,11 +24,18 @@ dp = Dispatcher()
 
 globals.bot = bot
 
+logger = logging.getLogger(__name__)
+
 
 async def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+    )
+
     await models.async_main()
 
-    print('✅ База данных запущена')
+    logger.info('База данных запущена')
 
     dp.include_routers(start_handler.router,
                    weather_handler.router,
@@ -37,24 +45,23 @@ async def main():
                    admin_statistics_handler.router,
                    admin_mailing_handler.router)
 
-    print('✅ Обработчики подключены')
+    logger.info('Обработчики подключены')
 
     globals.aiohttp_session = aiohttp.ClientSession()
 
-    print('✅ aiohttp подключен')
+    logger.info('aiohttp подключен')
 
     await nats_service.init()
 
-    print('✅ NATS подключен')
+    logger.info('NATS подключен')
 
     worker = asyncio.create_task(weather_mailing_task.weather_mailing_worker())
     sender_worker = asyncio.create_task(weather_mailing_task.weather_sender_worker())
     admin_worker = asyncio.create_task(admin_mailing_task.admin_mailing_worker())
 
-    print('✅ Воркеры погодной рассылки запущены')
-    print('✅ Воркер админ-рассылки запущен')
+    logger.info('Воркеры запущены (погодная и админ-рассылка)')
 
-    print('✅ Начало работы')
+    logger.info('Начало работы')
 
     try:
         await dp.start_polling(bot)
@@ -70,4 +77,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print('Exit')
+        logger.info('Exit')

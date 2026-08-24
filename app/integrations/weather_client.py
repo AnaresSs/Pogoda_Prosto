@@ -1,8 +1,11 @@
 import asyncio
+import logging
 
 from aiohttp import ClientResponseError
 
 from app.core import globals
+
+logger = logging.getLogger(__name__)
 
 
 class WeatherClient:
@@ -38,8 +41,8 @@ class WeatherClient:
                 last_error = exc
                 if attempt < self.MAX_ATTEMPTS:
                     delay = self.RETRY_DELAY_SECONDS * attempt
-                    print(f"[weather] API вернул {exc.status}, повтор через {delay}с "
-                          f"(попытка {attempt + 1} из {self.MAX_ATTEMPTS})")
+                    logger.warning("API вернул %s, повтор через %ss (попытка %d из %d)",
+                                   exc.status, delay, attempt + 1, self.MAX_ATTEMPTS)
                     await asyncio.sleep(delay)
 
         raise last_error

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramForbiddenError
@@ -7,6 +8,8 @@ from nats.errors import TimeoutError
 
 from app.core import globals
 from app.services import nats_service
+
+logger = logging.getLogger(__name__)
 
 MAX_DELIVER = 3
 
@@ -31,7 +34,7 @@ async def handle_admin_mailing_message(message):
             f'🚫 Заблокировали бота: {stats["blocked"]}',
             f'⚠️ Ошибки: {stats["errors"]}',
         ]
-        print(f"[admin_mailing] summary для {message.subject}: {stats}")
+        logger.info("summary для %s: %s", message.subject, stats)
         await globals.bot.send_message(
             data["admin_chat_id"],
             '\n'.join(lines),
@@ -48,13 +51,13 @@ async def handle_admin_mailing_message(message):
         )
         increment(message.subject, "success")
         await message.ack()
-        print(f"[admin_mailing] отправлено пользователю {data['user_id']}")
+        logger.info("отправлено пользователю %s", data['user_id'])
     except TelegramForbiddenError:
         increment(message.subject, "blocked")
         await message.term()
-        print(f"[admin_mailing] пользователь {data['user_id']} заблокировал бота")
+        logger.warning("пользователь %s заблокировал бота", data['user_id'])
     except Exception as exc:
-        print(f"[admin_mailing] ошибка доставки {data['user_id']}: {exc}")
+        logger.error("ошибка доставки %s: %s", data['user_id'], exc)
         if message.metadata.num_delivered >= MAX_DELIVER:
             increment(message.subject, "errors")
             await message.term()
@@ -70,14 +73,14 @@ async def admin_mailing_worker():
         except (TimeoutError, asyncio.TimeoutError):
             continue
         except Exception as exc:
-            print(f"Ошибка fetch в админ-воркере: {exc!r}")
+            logger.error("Ошибка fetch в админ-воркере: %r", exc)
             await asyncio.sleep(2)
             continue
         for message in messages:
             try:
                 await handle_admin_mailing_message(message)
             except Exception as exc:
-                print(f"Ошибка обработки рассылки: {exc}")
+                logger.error("Ошибка обработки рассылки: %s", exc)
                 try:
                     await message.nak()
                 except Exception:
