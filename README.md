@@ -77,8 +77,7 @@ app/
 │   └── states.py            # FSM-состояния (регистрация, рассылка)
 ├── core/
 │   ├── config.py            # переменные окружения
-│   ├── nats_setup.py        # стримы и консьюмеры JetStream
-│   └── globals.py           # общие объекты (bot, aiohttp session)
+│   └── nats_setup.py        # стримы и консьюмеры JetStream
 ├── database/
 │   ├── models.py            # ORM-модели: TelegramUser, Locality
 │   ├── repositories/        # запросы к БД

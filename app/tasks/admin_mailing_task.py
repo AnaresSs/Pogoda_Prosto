@@ -2,11 +2,10 @@ import asyncio
 import json
 import logging
 
-from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramForbiddenError
 from nats.errors import TimeoutError
 
-from app.core import globals
+from app.bot.notifications.admin_notifier import AdminNotifier
 from app.core.config import NATS_MAX_DELIVER
 from app.services import nats_service
 
@@ -20,30 +19,18 @@ def increment(subject: str, key: str):
     stats[key] += 1
 
 
-async def handle_admin_mailing_message(message):
+async def handle_admin_mailing_message(notifier: AdminNotifier, message):
     data = json.loads(message.data.decode())
 
     if data.get("type") == "summary":
         stats = results.pop(message.subject, {"success": 0, "blocked": 0, "errors": 0})
-        lines = [
-            '📨 <b>Рассылка завершена</b>',
-            '',
-            f'Всего пользователей: {data["total"]}',
-            f'✅ Отправлено: {stats["success"]}',
-            f'🚫 Заблокировали бота: {stats["blocked"]}',
-            f'⚠️ Ошибки: {stats["errors"]}',
-        ]
         logger.info("summary для %s: %s", message.subject, stats)
-        await globals.bot.send_message(
-            data["admin_chat_id"],
-            '\n'.join(lines),
-            parse_mode=ParseMode.HTML,
-        )
+        await notifier.send_mailing_summary(data["admin_chat_id"], data["total"], stats)
         await message.ack()
         return
 
     try:
-        await globals.bot.copy_message(
+        await notifier.bot.copy_message(
             chat_id=data["user_id"],
             from_chat_id=data["from_chat_id"],
             message_id=data["message_id"],
@@ -64,7 +51,7 @@ async def handle_admin_mailing_message(message):
             await message.nak()
 
 
-async def admin_mailing_worker():
+async def admin_mailing_worker(notifier: AdminNotifier):
     sub = await nats_service.subscribe_admin_mailing()
     while True:
         try:
@@ -77,12 +64,10 @@ async def admin_mailing_worker():
             continue
         for message in messages:
             try:
-                await handle_admin_mailing_message(message)
+                await handle_admin_mailing_message(notifier, message)
             except Exception as exc:
                 logger.error("Ошибка обработки рассылки: %s", exc)
                 try:
                     await message.nak()
                 except Exception:
                     pass
-
-

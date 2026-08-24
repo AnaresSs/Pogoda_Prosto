@@ -5,10 +5,10 @@ from datetime import datetime, timezone, timedelta
 
 from nats.errors import TimeoutError
 
-from app.bot.notifications import weather_mailing_notification
+from app.bot.notifications.weather_mailing_notification import WeatherNotifier
 from app.core.config import NATS_SENDER_CONSUMER, SEND_HOUR
 from app.database.session import session_scope
-from app.integrations.weather_client import weather_client
+from app.integrations.weather_client import WeatherClient
 from app.services import locality_service
 from app.services import nats_service
 from app.services import tg_user_service
@@ -58,7 +58,8 @@ async def weather_mailing_worker():
         await asyncio.sleep(1)
 
 
-async def handle_weather_message(session, message):
+async def handle_weather_message(session, weather_client: WeatherClient,
+                                 notifier: WeatherNotifier, message):
     data = json.loads(message.data.decode())
     user_id = data["user_id"]
 
@@ -71,10 +72,10 @@ async def handle_weather_message(session, message):
         return
 
     weather = await weather_client.get_forecast(locality.latitude, locality.longitude)
-    await weather_mailing_notification.send_weather_notification(user_id, weather, locality.name)
+    await notifier.send_daily(user_id, weather, locality.name)
 
 
-async def weather_sender_worker():
+async def weather_sender_worker(weather_client: WeatherClient, notifier: WeatherNotifier):
     sub = await nats_service.subscribe(SENDER_SUBJECT, NATS_SENDER_CONSUMER)
     while True:
         try:
@@ -89,7 +90,7 @@ async def weather_sender_worker():
             try:
                 # Транзакция на сообщение: коммит БД -> ack
                 async with session_scope() as session:
-                    await handle_weather_message(session, message)
+                    await handle_weather_message(session, weather_client, notifier, message)
                 await message.ack()
             except Exception as exc:
                 logger.error("Ошибка обработки задачи: %r", exc)

@@ -6,8 +6,10 @@ import aiohttp
 
 from app.database import models
 from app.database.models import async_session
-from app.core import globals
 from app.bot.middlewares import DbSessionMiddleware
+from app.bot.notifications.admin_notifier import AdminNotifier
+from app.bot.notifications.weather_mailing_notification import WeatherNotifier
+from app.integrations.weather_client import WeatherClient
 from app.services import nats_service
 from app.tasks import weather_mailing_task
 from app.tasks import admin_mailing_task
@@ -23,8 +25,6 @@ from app.bot.handlers.admin import admin_mailing_handler
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
-
-globals.bot = bot
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +49,20 @@ async def main():
 
     logger.info('Обработчики подключены')
 
+    # --- Composition root: собираем долгоживущие зависимости и раздаём ---
+
+    http_session = aiohttp.ClientSession()
+    weather_client = WeatherClient(http_session)
+
+    notifier = WeatherNotifier(bot)
+    admin_notifier = AdminNotifier(bot)
+
     # Одна сессия и одна транзакция на каждый апдейт от Telegram
     dp.message.middleware(DbSessionMiddleware(async_session))
     dp.callback_query.middleware(DbSessionMiddleware(async_session))
 
-    globals.aiohttp_session = aiohttp.ClientSession()
+    # Зависимости для хэндлеров: aiogram передаст их по имени параметра
+    dp["weather_client"] = weather_client
 
     logger.info('aiohttp подключен')
 
@@ -62,8 +71,10 @@ async def main():
     logger.info('NATS подключен')
 
     worker = asyncio.create_task(weather_mailing_task.weather_mailing_worker())
-    sender_worker = asyncio.create_task(weather_mailing_task.weather_sender_worker())
-    admin_worker = asyncio.create_task(admin_mailing_task.admin_mailing_worker())
+    sender_worker = asyncio.create_task(
+        weather_mailing_task.weather_sender_worker(weather_client, notifier))
+    admin_worker = asyncio.create_task(
+        admin_mailing_task.admin_mailing_worker(admin_notifier))
 
     logger.info('Воркеры запущены (погодная и админ-рассылка)')
 
@@ -76,7 +87,7 @@ async def main():
         sender_worker.cancel()
         admin_worker.cancel()
         await nats_service.close()
-        await globals.aiohttp_session.close()
+        await http_session.close()
 
 
 if __name__ == '__main__':
