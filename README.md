@@ -30,27 +30,22 @@ Telegram-бот с прогнозами погоды и ежедневной р�
 
 ## Архитектура
 
+```mermaid
+flowchart TD
+    U["👤 Пользователь Telegram"] <-->|"апдейты / сообщения"| B["aiogram handlers"]
+    B --> S["services<br/>бизнес-логика"]
+    S --> R["repositories"]
+    R --> DB[("PostgreSQL")]
+
+    S -->|"publish задач"| NS{{"NATS JetStream"}}
+    NS -->|"pull, at-least-once"| W1["publisher<br/>проверка времени каждую минуту"]
+    W1 -->|"weather.daily"| NS
+    NS --> W2["sender<br/>погода пользователю"]
+    NS --> W3["admin worker<br/>админ-рассылка"]
+    W2 --> WM["Open-Meteo API"]
 ```
-┌─────────────┐   город/гео    ┌──────────────────┐
-│  Telegram    │◄─────────────►│  aiogram handlers │
-└─────────────┘                └────────┬─────────┘
-                                        │ services (бизнес-логика)
-                              ┌─────────▼─────────┐
-                              │  repositories      │────► PostgreSQL
-                              └─────────┬─────────┘
-                                        │ publish
-                              ┌─────────▼─────────┐
-                              │  NATS JetStream    │
-                              │  WEATHER           │ weather.daily
-                              │  ADMIN_MAILING     │ admin.mailing.*
-                              └─────────┬─────────┘
-                                        │ pull, at-least-once
-                     ┌──────────────────┼──────────────────┐
-              ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼────────┐
-              │ publisher   │    │ sender       │    │ admin worker  │
-              │ каждую минут│    │ погода юзеру │    │ рассылка адми │
-              └─────────────┘    └─────────────┘    └───────────────┘
-```
+
+*Хэндлеры принимают апдейты, сервисы содержат бизнес-логику, репозитории ходят в PostgreSQL. Долгие операции (рассылки) уходят через NATS JetStream в фоновые воркеры: publisher кладёт задачи, sender и admin worker разбирают очередь с гарантией at-least-once.*
 
 ### Как устроена ежедневная рассылка
 
