@@ -10,13 +10,13 @@ router = Router()
 
 
 @router.callback_query(F.data == 'toggle_notifications')
-async def callback_toggle_notifications(callback: CallbackQuery, state: FSMContext):
-    user = await tg_user_service.get_user(callback.from_user.id)
+async def callback_toggle_notifications(callback: CallbackQuery, state: FSMContext, session):
+    user = await tg_user_service.get_user(session, callback.from_user.id)
     if user is None:
         return
 
     enabled = not user.notifications_enabled
-    await tg_user_service.set_notifications(callback.from_user.id, enabled)
+    await tg_user_service.set_notifications(session, callback.from_user.id, enabled)
 
     message_text = 'Уведомления включены ✅' if enabled else 'Уведомления отключены ❌'
 

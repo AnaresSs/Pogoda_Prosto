@@ -5,7 +5,9 @@ from app.core.config import TOKEN
 import aiohttp
 
 from app.database import models
+from app.database.models import async_session
 from app.core import globals
+from app.bot.middlewares import DbSessionMiddleware
 from app.services import nats_service
 from app.tasks import weather_mailing_task
 from app.tasks import admin_mailing_task
@@ -46,6 +48,10 @@ async def main():
                    admin_mailing_handler.router)
 
     logger.info('Обработчики подключены')
+
+    # Одна сессия и одна транзакция на каждый апдейт от Telegram
+    dp.message.middleware(DbSessionMiddleware(async_session))
+    dp.callback_query.middleware(DbSessionMiddleware(async_session))
 
     globals.aiohttp_session = aiohttp.ClientSession()
 

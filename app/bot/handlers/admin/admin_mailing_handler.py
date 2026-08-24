@@ -44,7 +44,7 @@ async def message_mailing_message(message: Message, state: FSMContext):
 
 
 @router.callback_query(Mailing.waiting_for_audience, F.data.startswith('mailing_audience_'))
-async def callback_mailing_audience(callback: CallbackQuery, state: FSMContext):
+async def callback_mailing_audience(callback: CallbackQuery, state: FSMContext, session):
     if callback.from_user.id not in ADMIN_IDS:
         return
 
@@ -54,6 +54,7 @@ async def callback_mailing_audience(callback: CallbackQuery, state: FSMContext):
     has_locality, notifications_enabled = AUDIENCE_FILTERS[callback.data]
 
     users = await tg_user_service.get_users(
+        session,
         has_locality=has_locality,
         notifications_enabled=notifications_enabled,
     )

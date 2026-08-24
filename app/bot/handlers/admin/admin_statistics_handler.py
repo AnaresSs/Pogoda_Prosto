@@ -9,8 +9,8 @@ router = Router()
 
 
 @router.callback_query(F.data == 'admin_stats')
-async def callback_admin_stats(callback: CallbackQuery):
-    stats = await statistics_service.get_statistics()
+async def callback_admin_stats(callback: CallbackQuery, session):
+    stats = await statistics_service.get_statistics(session)
 
     total = stats['total']
 

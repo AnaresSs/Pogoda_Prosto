@@ -72,6 +72,7 @@ app/
 │   │   ├── user/            # старт, погода, геолокация, уведомления
 │   │   └── admin/           # меню, статистика, рассылка
 │   ├── keyboards/           # inline/reply клавиатуры
+│   ├── middlewares/         # DbSessionMiddleware: сессия БД на апдейт
 │   ├── notifications/       # форматтеры текстов погоды
 │   └── states.py            # FSM-состояния (регистрация, рассылка)
 ├── core/
@@ -81,7 +82,7 @@ app/
 ├── database/
 │   ├── models.py            # ORM-модели: TelegramUser, Locality
 │   ├── repositories/        # запросы к БД
-│   ├── decorators.py        # with_session / with_session_transaction
+│   ├── session.py           # session_scope: транзакция на единицу работы
 │   └── ...
 ├── integrations/
 │   └── weather_client.py    # клиент Open-Meteo с ретраями
