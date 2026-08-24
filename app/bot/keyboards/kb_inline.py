@@ -68,10 +68,13 @@ def get_keyboard_mailing_audience():
     return keyboard.as_markup()
 
 
-def get_keyboard_weather():
+def get_keyboard_weather(days: int = 1):
     keyboard = InlineKeyboardBuilder()
 
+    keyboard.button(text='🔄 Обновить', callback_data=f'weather_refresh_{days}')
     keyboard.button(text='◀️ Назад в меню', callback_data='returnToMenu')
+
+    keyboard.adjust(2)
 
     return keyboard.as_markup()
 

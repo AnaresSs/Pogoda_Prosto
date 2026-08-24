@@ -145,6 +145,21 @@ class TestFormatWeatherMessage:
         assert "05:30" in text
         assert "2026-08-21T05:30" not in text
 
+    # День и ночь — отдельные строки, а не «max / min» в одной
+    def test_day_and_night_separate_lines(self):
+        text = format_weather_message(self.make_weather(), "Сочи")
+        assert "<b>Днём:</b> +25°C" in text
+        assert "<b>Ночью:</b> +15°C" in text
+
+    # Осадки помечены как значение за весь день, а не текущее
+    def test_precip_labeled_for_whole_day(self):
+        text = format_weather_message(self.make_weather(), "Сочи")
+        assert "Осадки за день:" in text
+
+    def test_wind_labeled_for_whole_day(self):
+        text = format_weather_message(self.make_weather(), "Сочи")
+        assert "Ветер за день:" in text
+
 
 # Сборка многострочного прогноза на N дней
 class TestFormatWeatherForecast:

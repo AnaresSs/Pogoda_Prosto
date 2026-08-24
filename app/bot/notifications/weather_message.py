@@ -89,10 +89,12 @@ def format_weather_message(weather, city_name="") -> str:
     return f'''{format_city_header(city_name)}
 
 <b>Сейчас:</b> {current_temp_str}, {current_desc}
-<b>Днём:</b> {temp_max_str} / ночью {temp_min_str}, {daily_desc}
 
-💧 <b>Осадки:</b> {precip_str}
-💨 <b>Ветер:</b> {wind_str}
+<b>Днём:</b> {temp_max_str}, {daily_desc}
+<b>Ночью:</b> {temp_min_str}
+
+💧 <b>Осадки за день:</b> {precip_str}
+💨 <b>Ветер за день:</b> {wind_str}
 
 🌅 <b>Рассвет:</b> {sunrise_str}
 🌇 <b>Закат:</b> {sunset_str}
@@ -117,7 +119,11 @@ def format_weather_forecast(weather, city_name=""):
         precip_str = format_precip(get_daily_value(daily, "precipitation_probability_max", index))
         wind_str = format_wind(get_daily_value(daily, "wind_speed_10m_max", index))
 
-        blocks.append(f"📅 {date_str}\n{desc}, {temp_max_str} / {temp_min_str}\n"
-                      f"💧 Осадки: {precip_str}\n💨 Ветер: {wind_str}")
+        blocks.append(
+            f"📅 {date_str}\n"
+            f"{desc}\n"
+            f"{temp_max_str} днём / {temp_min_str} ночью\n"
+            f"💧 Осадки: {precip_str} · 💨 Ветер: {wind_str}"
+        )
 
     return f"{header}\n\n" + "\n\n".join(blocks)

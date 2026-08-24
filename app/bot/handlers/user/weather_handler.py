@@ -1,5 +1,6 @@
 from aiogram import F, Router
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
 from app.bot.keyboards import kb_inline
@@ -35,12 +36,28 @@ async def send_forecast(callback: CallbackQuery, days: int):
     else:
         text = weather_message.format_weather_forecast(weather, city_name)
 
-    await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb_inline.get_keyboard_weather())
+    try:
+        await callback.message.edit_text(
+            text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb_inline.get_keyboard_weather(days),
+        )
+        await callback.answer()
+    except TelegramBadRequest:
+        # Telegram отклоняет редактирование, если текст не изменился —
+        # для кнопки «Обновить» это штатная ситуация «данные актуальны»
+        await callback.answer('Данные уже актуальны ✅')
 
 
 @router.callback_query(F.data == 'weather_now')
 async def callback_weather_now(callback: CallbackQuery):
     await send_forecast(callback, 1)
+
+
+@router.callback_query(F.data.startswith('weather_refresh_'))
+async def callback_weather_refresh(callback: CallbackQuery):
+    days = int(callback.data.rsplit('_', 1)[1])
+    await send_forecast(callback, days)
 
 
 @router.callback_query(F.data == 'weather_days_3')
