@@ -8,7 +8,12 @@ from app.core.config import WEATHER_MAX_ATTEMPTS, WEATHER_RETRY_DELAY_SECONDS
 logger = logging.getLogger(__name__)
 
 
-class WeatherClient:
+class OpenMeteoProvider:
+    """Реализация WeatherProvider на API open-meteo.com.
+
+    Соответствует контракту WeatherProvider структурно: наследование не нужно.
+    """
+
     FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
     # Повторные попытки на случай временных сбоев API (503, rate limit)

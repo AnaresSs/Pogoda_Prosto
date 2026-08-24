@@ -8,7 +8,7 @@ from nats.errors import TimeoutError
 from app.bot.notifications.weather_mailing_notification import WeatherNotifier
 from app.core.config import NATS_SENDER_CONSUMER, SEND_HOUR
 from app.database.session import session_scope
-from app.integrations.weather_client import WeatherClient
+from app.integrations.providers import WeatherProvider
 from app.services import locality_service
 from app.services import nats_service
 from app.services import tg_user_service
@@ -58,7 +58,7 @@ async def weather_mailing_worker():
         await asyncio.sleep(1)
 
 
-async def handle_weather_message(session, weather_client: WeatherClient,
+async def handle_weather_message(session, weather_client: WeatherProvider,
                                  notifier: WeatherNotifier, message):
     data = json.loads(message.data.decode())
     user_id = data["user_id"]
@@ -75,7 +75,7 @@ async def handle_weather_message(session, weather_client: WeatherClient,
     await notifier.send_daily(user_id, weather, locality.name)
 
 
-async def weather_sender_worker(weather_client: WeatherClient, notifier: WeatherNotifier):
+async def weather_sender_worker(weather_client: WeatherProvider, notifier: WeatherNotifier):
     sub = await nats_service.subscribe(SENDER_SUBJECT, NATS_SENDER_CONSUMER)
     while True:
         try:

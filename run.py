@@ -9,7 +9,8 @@ from app.database.models import async_session
 from app.bot.middlewares import DbSessionMiddleware
 from app.bot.notifications.admin_notifier import AdminNotifier
 from app.bot.notifications.weather_mailing_notification import WeatherNotifier
-from app.integrations.weather_client import WeatherClient
+from app.integrations.providers import WeatherProvider
+from app.integrations.weather_client import OpenMeteoProvider
 from app.services import nats_service
 from app.tasks import weather_mailing_task
 from app.tasks import admin_mailing_task
@@ -52,7 +53,9 @@ async def main():
     # --- Composition root: собираем долгоживущие зависимости и раздаём ---
 
     http_session = aiohttp.ClientSession()
-    weather_client = WeatherClient(http_session)
+    # Единственное место, где выбран конкретный поставщик погоды:
+    # смена API = замена этой одной строки (контракт — WeatherProvider)
+    weather_client: WeatherProvider = OpenMeteoProvider(http_session)
 
     notifier = WeatherNotifier(bot)
     admin_notifier = AdminNotifier(bot)
