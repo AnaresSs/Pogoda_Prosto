@@ -4,6 +4,7 @@ import logging
 from aiohttp import ClientResponseError
 
 from app.core import globals
+from app.core.config import WEATHER_MAX_ATTEMPTS, WEATHER_RETRY_DELAY_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +13,8 @@ class WeatherClient:
     FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
     # Повторные попытки на случай временных сбоев API (503, rate limit)
-    MAX_ATTEMPTS = 3
-    RETRY_DELAY_SECONDS = 2
+    MAX_ATTEMPTS = WEATHER_MAX_ATTEMPTS
+    RETRY_DELAY_SECONDS = WEATHER_RETRY_DELAY_SECONDS
 
     async def get_forecast(self, latitude: float, longitude: float, days: int = 1):
         params = {

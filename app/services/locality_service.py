@@ -1,11 +1,10 @@
+from app.core.config import GEO_SEARCH_DELTA_DEGREES, GEO_SEARCH_RADIUS_KM
 from app.database.decorators import with_session, with_session_transaction
 from app.database.repositories.locality_repository import LocalityRepository
 
 import math
 
 EARTH_RADIUS_KM = 6371.0
-DEFAULT_SEARCH_RADIUS_KM = 75.0
-DEFAULT_DELTA_DEGREES = 1.0
 
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -45,8 +44,8 @@ async def get_by_id(session, locality_id: int):
 
 @with_session
 async def get_nearest(session, latitude: float, longitude: float,
-                      delta: float = DEFAULT_DELTA_DEGREES,
-                      radius_km: float = DEFAULT_SEARCH_RADIUS_KM):
+                      delta: float = GEO_SEARCH_DELTA_DEGREES,
+                      radius_km: float = GEO_SEARCH_RADIUS_KM):
     locality_repo = LocalityRepository(session)
     candidates = await locality_repo.get_in_bbox(
         latitude - delta, latitude + delta,

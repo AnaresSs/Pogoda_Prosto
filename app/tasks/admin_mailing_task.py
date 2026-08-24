@@ -7,11 +7,10 @@ from aiogram.exceptions import TelegramForbiddenError
 from nats.errors import TimeoutError
 
 from app.core import globals
+from app.core.config import NATS_MAX_DELIVER
 from app.services import nats_service
 
 logger = logging.getLogger(__name__)
-
-MAX_DELIVER = 3
 
 results = {}
 
@@ -58,7 +57,7 @@ async def handle_admin_mailing_message(message):
         logger.warning("пользователь %s заблокировал бота", data['user_id'])
     except Exception as exc:
         logger.error("ошибка доставки %s: %s", data['user_id'], exc)
-        if message.metadata.num_delivered >= MAX_DELIVER:
+        if message.metadata.num_delivered >= NATS_MAX_DELIVER:
             increment(message.subject, "errors")
             await message.term()
         else:
