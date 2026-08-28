@@ -30,7 +30,8 @@ services:
 
   weather_bot:
     build:
-      context: ..
+      # context отсчитывается от project directory (запускаем из корня репо)
+      context: .
       dockerfile: docker/Dockerfile
     restart: always
     # Пути env_file отсчитываются от project directory (запускаем из корня репо)
