@@ -27,7 +27,7 @@ async def command_start(message: Message, state: FSMContext, session):
     if await tg_user_service.add_user_if_not_register(session, tg_id, username):
         await state.set_state(Registration.waiting_for_locality)
         await message.answer('''
-<b>👋 Привет!</b> Добро пожаловать в мой погодный бот! 🌤️
+<b>👋 Привет!</b> Добро пожаловать в погодного бота! 🌤️
 
 <b>🌀 Обо мне:</b> Каждое утро я присылаю тебе прогноз погоды на день, чтобы ты был готов к любому сюрпризу природы. ☔❄️☀️
 
@@ -45,7 +45,7 @@ async def command_start(message: Message, state: FSMContext, session):
     else:
         menu = await get_menu_keyboard(session, tg_id)
         await message.answer('''
-<b>👋 Привет!</b> Добро пожаловать в мой погодный бот! 🌤️
+<b>👋 Привет!</b> Добро пожаловать в погодного бота! 🌤️
 
 <b>🌀 Обо мне:</b> Каждое утро я присылаю тебе прогноз погоды на день, чтобы ты был готов к любому сюрпризу природы. ☔❄️☀️
 
