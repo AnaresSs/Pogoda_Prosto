@@ -12,9 +12,11 @@ from nats.js.api import (
 from nats.js.errors import NotFoundError
 
 from app.core.config import (
+    NATS_ACK_WAIT_SECONDS,
     NATS_ADMIN_SENDER_CONSUMER,
     NATS_ADMIN_STREAM_NAME,
     NATS_ADMIN_STREAM_SUBJECTS,
+    NATS_MAX_DELIVER,
     NATS_SENDER_CONSUMER,
     NATS_STREAM_NAME,
     NATS_STREAM_SUBJECTS,
@@ -47,8 +49,8 @@ async def ensure_consumer(js: JetStreamContext, stream: str, durable: str, filte
     cfg = ConsumerConfig(
         durable_name=durable,
         ack_policy=AckPolicy.EXPLICIT,
-        ack_wait=5 * 60,
-        max_deliver=3,
+        ack_wait=NATS_ACK_WAIT_SECONDS,
+        max_deliver=NATS_MAX_DELIVER,
         deliver_policy=DeliverPolicy.ALL,
         filter_subject=filter_subject,
     )

@@ -6,7 +6,8 @@ import zipfile
 
 from sqlalchemy import delete, func, select
 
-from app.database.models import Locality, TelegramUser, async_session
+from app.database.models import Locality, TelegramUser
+from app.database.session import session_scope
 
 BASE_URL = "https://download.geonames.org/export/dump"
 MAIN_ZIP = "RU.zip"
@@ -94,25 +95,24 @@ def build_rows(places: dict, russian: dict) -> list:
 
 
 async def seed_db(rows: list):
-    async with async_session() as session:
-        async with session.begin():
-            current_count = await session.scalar(select(func.count(Locality.id))) or 0
+    async with session_scope() as session:
+        current_count = await session.scalar(select(func.count(Locality.id))) or 0
 
-            if current_count > 0:
-                if not FORCE:
-                    print(f"В таблице localities уже {current_count} записей. Останавливаюсь (запусти с --force чтобы перезалить).")
-                    return
-                user_count = await session.scalar(select(func.count(TelegramUser.id))) or 0
-                if user_count > 0:
-                    print(f"Нельзя очистить localities: на неё ссылаются {user_count} пользователей.")
-                    return
-                await session.execute(delete(Locality))
-                print(f"Старые записи ({current_count}) удалены.")
+        if current_count > 0:
+            if not FORCE:
+                print(f"В таблице localities уже {current_count} записей. Останавливаюсь (запусти с --force чтобы перезалить).")
+                return
+            user_count = await session.scalar(select(func.count(TelegramUser.id))) or 0
+            if user_count > 0:
+                print(f"Нельзя очистить localities: на неё ссылаются {user_count} пользователей.")
+                return
+            await session.execute(delete(Locality))
+            print(f"Старые записи ({current_count}) удалены.")
 
-            for i in range(0, len(rows), 2000):
-                batch = rows[i:i + 2000]
-                session.add_all([Locality(**item) for item in batch])
-                print(f"Загружено {min(i + 2000, len(rows))} из {len(rows)}")
+        for i in range(0, len(rows), 2000):
+            batch = rows[i:i + 2000]
+            session.add_all([Locality(**item) for item in batch])
+            print(f"Загружено {min(i + 2000, len(rows))} из {len(rows)}")
 
     print("Готово! Города загружены в БД.")
 

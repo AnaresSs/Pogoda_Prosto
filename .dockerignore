@@ -15,3 +15,4 @@ tests/
 requirements-dev.txt
 pytest.ini
 docker-compose.test.yml
+notes_theory.txt

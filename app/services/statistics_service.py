@@ -1,10 +1,8 @@
 from datetime import datetime, timezone, timedelta
 
-from app.database.decorators import with_session
 from app.database.repositories.telegram_user_repository import TelegramUserRepository
 
 
-@with_session
 async def get_statistics(session, top_localities: int = 10):
     tg_repo = TelegramUserRepository(session)
     now = datetime.now(timezone.utc)

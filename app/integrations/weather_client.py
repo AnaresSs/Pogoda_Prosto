@@ -1,16 +1,28 @@
 import asyncio
+import logging
 
-from aiohttp import ClientResponseError
+from aiohttp import ClientResponseError, ClientSession
 
-from app.core import globals
+from app.core.config import WEATHER_MAX_ATTEMPTS, WEATHER_RETRY_DELAY_SECONDS
+
+logger = logging.getLogger(__name__)
 
 
-class WeatherClient:
+class OpenMeteoProvider:
+    """Реализация WeatherProvider на API open-meteo.com.
+
+    Соответствует контракту WeatherProvider структурно: наследование не нужно.
+    """
+
     FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
     # Повторные попытки на случай временных сбоев API (503, rate limit)
-    MAX_ATTEMPTS = 3
-    RETRY_DELAY_SECONDS = 2
+    MAX_ATTEMPTS = WEATHER_MAX_ATTEMPTS
+    RETRY_DELAY_SECONDS = WEATHER_RETRY_DELAY_SECONDS
+
+    def __init__(self, http: ClientSession):
+        # HTTP-сессия создаётся один раз в run.py и передаётся сюда
+        self.http = http
 
     async def get_forecast(self, latitude: float, longitude: float, days: int = 1):
         params = {
@@ -28,7 +40,7 @@ class WeatherClient:
         last_error = None
         for attempt in range(1, self.MAX_ATTEMPTS + 1):
             try:
-                async with globals.aiohttp_session.get(self.FORECAST_URL, params=params) as resp:
+                async with self.http.get(self.FORECAST_URL, params=params) as resp:
                     resp.raise_for_status()
                     return await resp.json()
             except ClientResponseError as exc:
@@ -38,11 +50,8 @@ class WeatherClient:
                 last_error = exc
                 if attempt < self.MAX_ATTEMPTS:
                     delay = self.RETRY_DELAY_SECONDS * attempt
-                    print(f"[weather] API вернул {exc.status}, повтор через {delay}с "
-                          f"(попытка {attempt + 1} из {self.MAX_ATTEMPTS})")
+                    logger.warning("API вернул %s, повтор через %ss (попытка %d из %d)",
+                                   exc.status, delay, attempt + 1, self.MAX_ATTEMPTS)
                     await asyncio.sleep(delay)
 
         raise last_error
-
-
-weather_client = WeatherClient()

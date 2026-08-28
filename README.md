@@ -30,27 +30,22 @@ Telegram-бот с прогнозами погоды и ежедневной р�
 
 ## Архитектура
 
+```mermaid
+flowchart TD
+    U["👤 Пользователь Telegram"] <-->|"апдейты / сообщения"| B["aiogram handlers"]
+    B --> S["services<br/>бизнес-логика"]
+    S --> R["repositories"]
+    R --> DB[("PostgreSQL")]
+
+    S -->|"publish задач"| NS{{"NATS JetStream"}}
+    NS -->|"pull, at-least-once"| W1["publisher<br/>проверка времени каждую минуту"]
+    W1 -->|"weather.daily"| NS
+    NS --> W2["sender<br/>погода пользователю"]
+    NS --> W3["admin worker<br/>админ-рассылка"]
+    W2 --> WM["Open-Meteo API"]
 ```
-┌─────────────┐   город/гео    ┌──────────────────┐
-│  Telegram    │◄─────────────►│  aiogram handlers │
-└─────────────┘                └────────┬─────────┘
-                                        │ services (бизнес-логика)
-                              ┌─────────▼─────────┐
-                              │  repositories      │────► PostgreSQL
-                              └─────────┬─────────┘
-                                        │ publish
-                              ┌─────────▼─────────┐
-                              │  NATS JetStream    │
-                              │  WEATHER           │ weather.daily
-                              │  ADMIN_MAILING     │ admin.mailing.*
-                              └─────────┬─────────┘
-                                        │ pull, at-least-once
-                     ┌──────────────────┼──────────────────┐
-              ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼────────┐
-              │ publisher   │    │ sender       │    │ admin worker  │
-              │ каждую минут│    │ погода юзеру │    │ рассылка адми │
-              └─────────────┘    └─────────────┘    └───────────────┘
-```
+
+*Хэндлеры принимают апдейты, сервисы содержат бизнес-логику, репозитории ходят в PostgreSQL. Долгие операции (рассылки) уходят через NATS JetStream в фоновые воркеры: publisher кладёт задачи, sender и admin worker разбирают очередь с гарантией at-least-once.*
 
 ### Как устроена ежедневная рассылка
 
@@ -77,16 +72,16 @@ app/
 │   │   ├── user/            # старт, погода, геолокация, уведомления
 │   │   └── admin/           # меню, статистика, рассылка
 │   ├── keyboards/           # inline/reply клавиатуры
+│   ├── middlewares/         # DbSessionMiddleware: сессия БД на апдейт
 │   ├── notifications/       # форматтеры текстов погоды
 │   └── states.py            # FSM-состояния (регистрация, рассылка)
 ├── core/
 │   ├── config.py            # переменные окружения
-│   ├── nats_setup.py        # стримы и консьюмеры JetStream
-│   └── globals.py           # общие объекты (bot, aiohttp session)
+│   └── nats_setup.py        # стримы и консьюмеры JetStream
 ├── database/
 │   ├── models.py            # ORM-модели: TelegramUser, Locality
 │   ├── repositories/        # запросы к БД
-│   ├── decorators.py        # with_session / with_session_transaction
+│   ├── session.py           # session_scope: транзакция на единицу работы
 │   └── ...
 ├── integrations/
 │   └── weather_client.py    # клиент Open-Meteo с ретраями
@@ -99,9 +94,13 @@ tests/
 ├── unit/                    # форматтеры, геометрия (haversine)
 └── integration/             # сервисы и репозитории против PostgreSQL
 .github/workflows/ci.yml     # CI: тесты → автодеплой
-docker-compose.yml           # postgres + nats + weather_bot
-deploy.sh                    # обновление и перезапуск на сервере
-seed_cities.sh               # запуск сид-скрипта в контейнере
+scripts/
+├── deploy.sh                # обновление и перезапуск на сервере
+└── seed_cities.sh           # запуск сид-скрипта в контейнере
+docker/
+├── Dockerfile
+├── docker-compose.yml       # postgres + nats + weather_bot
+└── docker-compose.test.yml  # PostgreSQL для локальных тестов
 ```
 
 ## Быстрый старт
@@ -117,13 +116,13 @@ cp .env.example .env
 nano .env
 
 # поднять postgres, nats и бота
-docker compose up -d --build
+docker compose -f docker/docker-compose.yml --project-directory . up -d --build
 
 # загрузить ~4800 городов России в базу (скачивает архивы GeoNames, ~15 МБ)
-./seed_cities.sh
+./scripts/seed_cities.sh
 ```
 
-Готово — бот отвечает в Telegram. Логи: `docker compose logs -f weather_bot`.
+Готово — бот отвечает в Telegram. Логи: `docker compose -f docker/docker-compose.yml --project-directory . logs -f weather_bot`.
 
 ## Переменные окружения
 
@@ -144,7 +143,7 @@ docker compose up -d --build
 
 ```bash
 pip install -r requirements-dev.txt
-docker compose -f docker-compose.test.yml up -d
+docker compose -f docker/docker-compose.test.yml up -d
 pytest
 ```
 
@@ -157,4 +156,4 @@ pytest
 1. **test** — подъём Postgres-контейнера, установка зависимостей, `pytest`. Красный крест = деплой отменяется
 2. **deploy** — SSH на сервер (ключи в зашифрованных Secrets репозитория): синхронизация кода через `git reset --hard origin/main`, пересборка контейнеров, ожидание маркера успешного старта в логах бота
 
-Ручной деплой с самого сервера: `./deploy.sh`.
+Ручной деплой с самого сервера: `./scripts/deploy.sh`.

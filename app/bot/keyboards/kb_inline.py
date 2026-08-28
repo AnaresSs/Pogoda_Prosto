@@ -1,5 +1,7 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from app.core.config import SUPPORT_USERNAME
+
 
 def get_keyboard_menu(notifications_enabled: bool = True):
     keyboard = InlineKeyboardBuilder()
@@ -15,7 +17,10 @@ def get_keyboard_menu(notifications_enabled: bool = True):
     else:
         keyboard.button(text='🔴 Уведомления отключены', callback_data='toggle_notifications')
 
-    keyboard.adjust(2, 2, 1, 1)
+    if SUPPORT_USERNAME:
+        keyboard.button(text='🆘 Поддержка', url=f'https://t.me/{SUPPORT_USERNAME}')
+
+    keyboard.adjust(2, 2, 1, 1, 1)
 
     return keyboard.as_markup()
 
@@ -63,10 +68,13 @@ def get_keyboard_mailing_audience():
     return keyboard.as_markup()
 
 
-def get_keyboard_weather():
+def get_keyboard_weather(days: int = 1):
     keyboard = InlineKeyboardBuilder()
 
+    keyboard.button(text='🔄 Обновить', callback_data=f'weather_refresh_{days}')
     keyboard.button(text='◀️ Назад в меню', callback_data='returnToMenu')
+
+    keyboard.adjust(2)
 
     return keyboard.as_markup()
 

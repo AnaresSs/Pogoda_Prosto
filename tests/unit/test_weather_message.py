@@ -1,3 +1,5 @@
+from pytest import mark
+
 from app.bot.notifications.weather_message import (
     describe_weather,
     days_word,
@@ -10,90 +12,68 @@ from app.bot.notifications.weather_message import (
 )
 
 
-# Правильное склонение слова "день" в шапке прогноза
-class TestDaysWord:
-    # 1 → "день"
-    def test_one_day(self):
-        assert days_word(1) == "день"
-
-    # 2-4 → "дня"
-    def test_two_days(self):
-        assert days_word(2) == "дня"
-
-    # 5-10, 20, 30... → "дней"
-    def test_five_days(self):
-        assert days_word(5) == "дней"
-
-    # 11 — исключение из правила "1 → день": должно быть "дней"
-    def test_eleven_days(self):
-        assert days_word(11) == "дней"
-
-    # 21 снова оканчивается на 1 → "день"
-    def test_twenty_one_days(self):
-        assert days_word(21) == "день"
-
-    # 12-14 — исключение из правила "2-4 → дня": должно быть "дней"
-    def test_twelve_days(self):
-        assert days_word(12) == "дней"
+# Правильное склонение слова "день" в шапке прогноза.
+# Кейсы покрывают правила и их исключения: 11-14 → "дней", 21/22 → "день"/"дня"
+@mark.parametrize("count, expected", [
+    (1, "день"),
+    (2, "дня"),
+    (5, "дней"),
+    (11, "дней"),
+    (12, "дней"),
+    (21, "день"),
+    (22, "дня"),
+])
+def test_days_word(count, expected):
+    assert days_word(count) == expected
 
 
-# Мелкие форматтеры отдельных значений
-class TestFormatters:
-    # Положительная температура выводится со знаком "+"
-    def test_format_temp_positive(self):
-        assert format_temp(20) == "+20°C"
+# Мелкие форматтеры отдельных значений: нормальный случай, None, краевые значения
+@mark.parametrize("value, expected", [
+    (20, "+20°C"),
+    (-3.7, "-4°C"),
+    (None, "—"),
+])
+def test_format_temp(value, expected):
+    assert format_temp(value) == expected
 
-    # Отрицательная округляется до целого
-    def test_format_temp_negative_rounds(self):
-        assert format_temp(-3.7) == "-4°C"
 
-    # Нет данных → прочерк вместо падения
-    def test_format_temp_none(self):
-        assert format_temp(None) == "—"
+@mark.parametrize("value, expected", [
+    (30.4, "30%"),
+    (None, "—"),
+])
+def test_format_precip(value, expected):
+    assert format_precip(value) == expected
 
-    # Вероятность осадков округляется до целого процента
-    def test_format_precip(self):
-        assert format_precip(30.4) == "30%"
 
-    def test_format_precip_none(self):
-        assert format_precip(None) == "—"
+# Ветер конвертируется км/ч → м/с: 36 км/ч = 10 м/с
+@mark.parametrize("value, expected", [
+    (36.0, "до 10.0 м/с"),
+    (None, "—"),
+])
+def test_format_wind(value, expected):
+    assert format_wind(value) == expected
 
-    # Ветер конвертируется км/ч → м/с: 36 км/ч = 10 м/с
-    def test_format_wind_converts_to_ms(self):
-        assert format_wind(36.0) == "до 10.0 м/с"
 
-    def test_format_wind_none(self):
-        assert format_wind(None) == "—"
-
-    # Известный код погоды Open-Meteo → человеческое описание
-    def test_describe_weather_known_code(self):
-        assert describe_weather(0) == "ясно ☀️"
-
-    # Нет кода → нейтральная фраза без эмодзи
-    def test_describe_weather_none(self):
-        assert describe_weather(None) == "погода без осадков"
-
-    # Неизвестный код API не должен ломать сообщение
-    def test_describe_weather_unknown_code(self):
-        assert describe_weather(999) == "погода без осадков"
+# Код погоды Open-Meteo → человеческое описание; неизвестный/отсутствующий — нейтрально
+@mark.parametrize("code, expected", [
+    (0, "ясно ☀️"),
+    (61, "небольшой дождь 🌧️"),
+    (999, "погода без осадков"),
+    (None, "погода без осадков"),
+])
+def test_describe_weather(code, expected):
+    assert describe_weather(code) == expected
 
 
 # Безопасное чтение значения из daily-массива ответа API
-class TestGetDailyValue:
-    def test_returns_value(self):
-        assert get_daily_value({"temp": [10, 20]}, "temp", 1) == 20
-
-    # Ключа нет в ответе → default (None)
-    def test_missing_key(self):
-        assert get_daily_value({}, "temp", 0) is None
-
-    # Индекс за пределами массива → default, а не IndexError
-    def test_index_out_of_range(self):
-        assert get_daily_value({"temp": [10]}, "temp", 5) is None
-
-    # Пустой список считается отсутствием данных
-    def test_empty_list(self):
-        assert get_daily_value({"temp": []}, "temp", 0, default="x") == "x"
+@mark.parametrize("daily, key, index, default, expected", [
+    ({"temp": [10, 20]}, "temp", 1, None, 20),          # обычное значение
+    ({}, "temp", 0, None, None),                        # ключа нет
+    ({"temp": [10]}, "temp", 5, None, None),            # индекс за пределами массива
+    ({"temp": []}, "temp", 0, "x", "x"),                # пустой список → default
+])
+def test_get_daily_value(daily, key, index, default, expected):
+    assert get_daily_value(daily, key, index, default) == expected
 
 
 # Сборка полного сообщения «погода на сегодня»
@@ -144,6 +124,21 @@ class TestFormatWeatherMessage:
         text = format_weather_message(self.make_weather(), "Сочи")
         assert "05:30" in text
         assert "2026-08-21T05:30" not in text
+
+    # День и ночь — отдельные строки, а не «max / min» в одной
+    def test_day_and_night_separate_lines(self):
+        text = format_weather_message(self.make_weather(), "Сочи")
+        assert "<b>Днём:</b> +25°C" in text
+        assert "<b>Ночью:</b> +15°C" in text
+
+    # Осадки помечены как значение за весь день, а не текущее
+    def test_precip_labeled_for_whole_day(self):
+        text = format_weather_message(self.make_weather(), "Сочи")
+        assert "Осадки за день:" in text
+
+    def test_wind_labeled_for_whole_day(self):
+        text = format_weather_message(self.make_weather(), "Сочи")
+        assert "Ветер за день:" in text
 
 
 # Сборка многострочного прогноза на N дней

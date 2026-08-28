@@ -12,19 +12,19 @@ from app.bot.keyboards import kb_inline, kb_reply
 from app.bot.states import Registration
 
 
-async def get_menu_keyboard(tg_id):
-    user = await tg_user_service.get_user(tg_id)
+async def get_menu_keyboard(session, tg_id):
+    user = await tg_user_service.get_user(session, tg_id)
     notifications_enabled = user.notifications_enabled if user is not None else True
     return kb_inline.get_keyboard_menu(notifications_enabled)
 
 
 @router.message(CommandStart())
-async def command_start(message: Message, state: FSMContext):
+async def command_start(message: Message, state: FSMContext, session):
     await state.clear()
 
     tg_id = message.from_user.id
     username = message.from_user.username
-    if await tg_user_service.add_user_if_not_register(tg_id, username):
+    if await tg_user_service.add_user_if_not_register(session, tg_id, username):
         await state.set_state(Registration.waiting_for_locality)
         await message.answer('''
 <b>👋 Привет!</b> Добро пожаловать в мой погодный бот! 🌤️
@@ -43,7 +43,7 @@ async def command_start(message: Message, state: FSMContext):
 <b>🚀 Погнали!</b> После этого я всё настрою и начнём!
 ''', parse_mode=ParseMode.HTML, reply_markup=kb_reply.get_keyboard_start())
     else:
-        menu = await get_menu_keyboard(tg_id)
+        menu = await get_menu_keyboard(session, tg_id)
         await message.answer('''
 <b>👋 Привет!</b> Добро пожаловать в мой погодный бот! 🌤️
 
@@ -57,11 +57,11 @@ async def command_start(message: Message, state: FSMContext):
 
 
 @router.message(F.location)
-async def location_handler(message: Message, state: FSMContext):
+async def location_handler(message: Message, state: FSMContext, session):
     latitude = message.location.latitude
     longitude = message.location.longitude
 
-    locality = await tg_user_service.edit_locality_by_coords(message.from_user.id, latitude, longitude)
+    locality = await tg_user_service.edit_locality_by_coords(session, message.from_user.id, latitude, longitude)
 
     if locality is not None:
         await state.clear()
@@ -71,7 +71,7 @@ async def location_handler(message: Message, state: FSMContext):
 
 Всё готово! Погода будет ждать тебя каждое утро. 🌤️
 ''', parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
-        menu = await get_menu_keyboard(message.from_user.id)
+        menu = await get_menu_keyboard(session, message.from_user.id)
         await message.answer('<b>Главное меню</b>', reply_markup=menu, parse_mode=ParseMode.HTML)
     else:
         await message.answer('''
@@ -80,17 +80,17 @@ async def location_handler(message: Message, state: FSMContext):
 
 
 @router.message(Registration.waiting_for_locality)
-async def message_location(message: Message, state: FSMContext):
+async def message_location(message: Message, state: FSMContext, session):
     tg_id = message.from_user.id
 
-    if await tg_user_service.edit_locality(tg_id, message.text.strip()):
+    if await tg_user_service.edit_locality(session, tg_id, message.text.strip()):
         await state.clear()
         await message.answer(f'''
 ✅ <b>{message.text.strip()}</b> — сохранил как твой населённый пункт!
 
 Всё готово! Погода будет ждать тебя каждое утро. 🌤️
 ''', parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
-        menu = await get_menu_keyboard(tg_id)
+        menu = await get_menu_keyboard(session, tg_id)
         await message.answer('<b>Главное меню</b>', reply_markup=menu, parse_mode=ParseMode.HTML)
     else:
         await message.answer('''
@@ -101,9 +101,9 @@ async def message_location(message: Message, state: FSMContext):
 
 
 @router.callback_query(F.data == 'returnToMenu')
-async def callback_return_to_menu(callback: CallbackQuery, state: FSMContext):
+async def callback_return_to_menu(callback: CallbackQuery, state: FSMContext, session):
     await state.clear()
-    menu = await get_menu_keyboard(callback.from_user.id)
+    menu = await get_menu_keyboard(session, callback.from_user.id)
     try:
         await callback.message.edit_text('<b>Главное меню</b>', reply_markup=menu,
                                          parse_mode=ParseMode.HTML)
